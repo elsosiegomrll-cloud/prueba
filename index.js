@@ -75,7 +75,7 @@ EL NEGOCIO TIENE DOS SERVICIOS COMPLETAMENTE DISTINTOS:
 CASA RURAL:
 - Alquiler exclusivo de toda la casa. Nadie más se aloja.
 - 4 dormitorios: Hab.1 (cama doble 150cm, vistas al jardín), Hab.2 (cama doble 150cm, vistas a Morella), Hab.3 (2 camas individuales, ideal niños), Hab.4 (2 camas individuales o convertible en doble, baño en suite)
-- Capacidad: hasta 9 personas. Superficie: 4.000 m²
+- Capacidad: hasta 12 personas. Superficie: 4.000 m²
 - Incluye: piscina privada exclusiva, terraza panorámica con vistas a la muralla medieval de Morella, parrilla/barbacoa exterior, jardín
 - Mascotas: admitidas con cariño
 - PRECIOS POR NOCHE (toda la casa, no por persona):
@@ -110,7 +110,7 @@ REGLAS:
 // ── Funciones IA con Groq ─────────────────────────────────
 async function clasificarMensaje(texto) {
   const r = await groq.chat.completions.create({
-    model: 'llama3-8b-8192',
+    model: 'llama-3.3-70b-versatile',
     messages: [{ role: 'user', content: `Clasifica este mensaje de WhatsApp como SIMPLE o COMPLEJA.\nSIMPLE: preguntas generales sobre qué es el negocio, precios, menús, ubicación, mascotas, capacidad, cómo reservar.\nCOMPLEJA: disponibilidad de fechas concretas, negociación de precios, grupos muy grandes, peticiones especiales, quejas.\nMensaje: "${texto}"\nResponde SOLO con una palabra: SIMPLE o COMPLEJA` }],
     max_tokens: 10,
   });
@@ -120,7 +120,7 @@ async function clasificarMensaje(texto) {
 
 async function generarRespuesta(texto) {
   const r = await groq.chat.completions.create({
-    model: 'llama3-8b-8192',
+    model: 'llama-3.3-70b-versatile',
     messages: [
       { role: 'system', content: CONTEXTO_SOSIEGO },
       { role: 'user', content: texto }
