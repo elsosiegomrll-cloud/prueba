@@ -1,0 +1,17 @@
+{
+  "name": "sosiego-whatsapp-bot",
+  "version": "1.0.0",
+  "description": "Agente de WhatsApp para El Sosiego - Morella",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "whatsapp-web.js": "^1.23.0",
+    "qrcode-terminal": "^0.12.0",
+    "@google/generative-ai": "^0.21.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
