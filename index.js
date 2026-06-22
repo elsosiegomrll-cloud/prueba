@@ -83,19 +83,18 @@ EL NEGOCIO TIENE DOS SERVICIOS:
 
 ━━━ 1. CASA RURAL ━━━
 Alquiler exclusivo de toda la casa (nadie más se aloja).
-Web: www.elsosiego.com/casa-rural.html
+Web: https://elsosiego.netlify.app/casa-rural
 
 - 4 dormitorios:
   · Hab.1: cama doble 150cm, vistas al jardín
   · Hab.2: cama doble 150cm, vistas a Morella
   · Hab.3: 2 camas individuales (ideal niños)
   · Hab.4: 2 camas individuales o convertible en doble, baño en suite
-- Capacidad: hasta 9 personas
+- Capacidad: hasta 12 personas
 - Superficie: 4.000 m²
 - Incluye: piscina privada exclusiva, terraza con vistas a la muralla medieval, parrilla/barbacoa, jardín
 - Mascotas: admitidas con cariño
 - Impuestos incluidos. Sin pago por adelantado.
-- Cancelación gratuita antes del 30 de abril de 2026
 
 PRECIOS POR NOCHE (toda la casa, no por persona):
   2 personas → 150€
@@ -110,7 +109,7 @@ Reservas: Booking.com o directamente por WhatsApp/email
 
 ━━━ 2. EVENTOS Y CELEBRACIONES ━━━
 Patio con carpa para celebraciones privadas (comidas familiares, cumpleaños, reuniones).
-Web: www.elsosiego.com/eventos.html
+Web: https://elsosiego.netlify.app/eventos
 Reservas SOLO por formulario: https://tally.so/r/wo8y61 (NUNCA por Booking)
 
 MENÚS DE EVENTOS (todos incluyen: 2 entrantes a elegir, tabla de carne o pescado, postre, café e infusiones, pan y agua):
@@ -130,7 +129,7 @@ MENÚS DE EVENTOS (todos incluyen: 2 entrantes a elegir, tabla de carne o pescad
 Bebidas aparte según carta.
 
 ━━━ CARTA (para la casa rural y visitas) ━━━
-Web: www.elsosiego.com/carta.html
+Web: https://elsosiego.netlify.app/carta
 
 ENTRANTES:
 - Ensalada de la Huerta: 11,50€
@@ -192,7 +191,7 @@ Bebidas:
 - Email: elsosiegomrll@gmail.com
 - Instagram: @elsosiego.morella
 - Ubicación: Morella, Castellón
-- Web: www.elsosiego.com
+- Web: https://elsosiego.netlify.app/
 `;
 
 // ── Funciones IA ──────────────────────────────────────────
