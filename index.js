@@ -162,7 +162,7 @@ ENTRANTES:
 - Codorniz en Escabeche: 12,00€
 - Tostas con Sobrasada Trufada: 7,50€
 
-CARNE A LA BRASA (acompañada de verduras de temporada):
+CARNE A LA BRASA:
 - Chuletón de Ternera Madurada 500g: 25€
 - Chuletón de Ternera 1kg: 23€
 - Entrecot de Ternera 500g: 17€
@@ -217,6 +217,47 @@ async function generarRespuesta(texto) {
   return r.choices[0].message.content.trim();
 }
 
+// ── Procesar comandos de control ──────────────────────────
+// Devuelve true si el mensaje era un comando (y no debe procesarse más)
+async function procesarComando(msg) {
+  const texto = msg.body?.trim().toLowerCase();
+  if (!texto) return false;
+
+  // #parar NUMERO — silencia ese contacto
+  // Ejemplo: #parar 34612345678
+  const matchParar = texto.match(/^#parar\s+(\d+)/);
+  if (matchParar) {
+    const numero = matchParar[1] + '@c.us';
+    atencionHumana.add(numero);
+    await msg.reply(`✅ Bot pausado para ${matchParar[1]}. Escribe #reanudar ${matchParar[1]} para reactivarlo.`);
+    console.log(`🤝 Atención humana activada para ${numero}`);
+    return true;
+  }
+
+  // #reanudar NUMERO — devuelve el control al bot
+  const matchReanudar = texto.match(/^#reanudar\s+(\d+)/);
+  if (matchReanudar) {
+    const numero = matchReanudar[1] + '@c.us';
+    atencionHumana.delete(numero);
+    await msg.reply(`✅ Bot reactivado para ${matchReanudar[1]}.`);
+    console.log(`🤖 Bot reactivado para ${numero}`);
+    return true;
+  }
+
+  // #lista — muestra los contactos pausados
+  if (texto === '#lista') {
+    if (atencionHumana.size === 0) {
+      await msg.reply('📋 No hay ningún contacto pausado ahora mismo.');
+    } else {
+      const numeros = [...atencionHumana].map(n => n.replace('@c.us', '')).join('\n');
+      await msg.reply(`📋 Contactos con bot pausado:\n${numeros}`);
+    }
+    return true;
+  }
+
+  return false;
+}
+
 // ── Cliente WhatsApp ──────────────────────────────────────
 const client = new Client({
   authStrategy: new LocalAuth({ dataPath: './session' }),
@@ -233,6 +274,7 @@ client.on('qr', (qr) => {
 client.on('ready', () => {
   qrActual = null;
   console.log('✅ Bot de El Sosiego conectado y listo');
+  console.log('💡 Comandos: #parar NUMERO / #reanudar NUMERO / #lista');
 });
 
 client.on('auth_failure', () => {
@@ -242,28 +284,16 @@ client.on('auth_failure', () => {
 client.on('message', async (msg) => {
   if (msg.from.includes('@g.us')) return;
   if (msg.from === 'status@broadcast') return;
+  if (msg.fromMe) return;
 
   const texto = msg.body?.trim();
   if (!texto) return;
 
-  // ── Mensajes enviados POR TI (Diego) desde el 694 268 895 ──
-  if (msg.fromMe) {
-    const numero = msg.to;
+  // Comprobar si es un comando de control
+  const esComando = await procesarComando(msg);
+  if (esComando) return;
 
-    // #fin — devuelve el control al bot
-    if (texto.toLowerCase() === '#fin') {
-      atencionHumana.delete(numero);
-      console.log(`✅ Bot reactivado para ${numero}`);
-    }
-    // Cualquier otro mensaje tuyo que empiece por # — tomas el control
-    else if (texto.startsWith('#')) {
-      atencionHumana.add(numero);
-      console.log(`🤝 Atención humana activada para ${numero}`);
-    }
-    return;
-  }
-
-  // ── Si ese contacto está en atención humana, ignorar ──
+  // Si ese contacto está en atención humana, ignorar
   if (atencionHumana.has(msg.from)) {
     console.log(`⏭️ Ignorado (atención humana): ${msg.from}`);
     return;
