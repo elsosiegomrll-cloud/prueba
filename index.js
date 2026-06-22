@@ -7,16 +7,41 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 let qrActual = null;
 
-// ── Lista de contactos en atención humana ─────────────────
-// Guardamos solo el número sin el sufijo @c.us / @s.whatsapp.net
-const atencionHumana = new Set();
+// ── Atención humana y memoria de conversaciones ───────────
+const atencionHumana = new Set(); // números pausados (cualquier formato)
+const historialChat = new Map();  // historial por contacto
+
+const MAX_HISTORIAL = 10; // últimos 10 mensajes por contacto
 
 function extraerNumero(id) {
-  return id.replace('@c.us', '').replace('@s.whatsapp.net', '').replace('@lid', '');
+  return id.replace('@c.us', '').replace('@s.whatsapp.net', '').replace('@lid', '').trim();
 }
 
 function estaEnAtencion(from) {
-  return atencionHumana.has(extraerNumero(from));
+  const num = extraerNumero(from);
+  // Comprueba si algún valor en el Set es substring del ID o viceversa
+  for (const pausado of atencionHumana) {
+    if (num.includes(pausado) || pausado.includes(num) || from.includes(pausado)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function agregarAlHistorial(contacto, rol, contenido) {
+  if (!historialChat.has(contacto)) {
+    historialChat.set(contacto, []);
+  }
+  const historial = historialChat.get(contacto);
+  historial.push({ role: rol, content: contenido });
+  // Mantener solo los últimos MAX_HISTORIAL mensajes
+  if (historial.length > MAX_HISTORIAL) {
+    historial.splice(0, historial.length - MAX_HISTORIAL);
+  }
+}
+
+function obtenerHistorial(contacto) {
+  return historialChat.get(contacto) || [];
 }
 
 // ── Servidor web para mostrar el QR ──────────────────────
@@ -77,20 +102,20 @@ servidor.listen(process.env.PORT || 3000, () => {
   console.log('✅ Servidor QR arriba. Abre la URL pública de Railway para escanear.');
 });
 
-// ── Contexto completo del negocio ─────────────────────────
+// ── Contexto del negocio ──────────────────────────────────
 const CONTEXTO_SOSIEGO = `
 Eres el asistente de WhatsApp de El Sosiego, negocio familiar en Morella (Castellón) con más de 20 años de historia.
 
 TONO: Cercano, directo y cálido. Como un familiar que atiende. Respuestas CORTAS (máximo 3-4 líneas). Sin párrafos largos. Sin florituras. 1-2 emojis máximo. Nada de "¡Claro que sí!" ni frases vacías de relleno.
 
-AUTONOMÍA: Confía en ti mismo. Si tienes la información, respóndela directamente. Solo escala a una persona real cuando la pregunta sea genuinamente imposible de responder con la información que tienes (disponibilidad de fechas concretas, negociación de precios, quejas, paellas a domicilio). Para todo lo demás, responde tú.
+AUTONOMÍA: Confía en ti mismo. Si tienes la información, respóndela directamente. Solo escala a una persona real cuando la pregunta sea genuinamente imposible de responder (disponibilidad de fechas concretas, negociación de precios, quejas, paellas a domicilio). Para todo lo demás, responde tú con la información del contexto.
 
-RECOMENDACIONES DE MENÚ: Si alguien pide recomendación sobre qué menú elegir, recomienda siempre la TABLA CHULETÓN PREMIUM (30€/persona). Argumento: por solo 2€ más que el El Sosiego incluye cortes premium como el chuletón de ternera, secreto ibérico, chuleta de cordero y entrecot — una experiencia muy superior. Da igual cuántas personas sean, siempre recomienda el Premium.
+MEMORIA: Tienes acceso al historial de la conversación. Úsalo para dar respuestas coherentes y no repetir información ya dada. Si el cliente ya te dijo cuántas personas son o qué servicio busca, recuérdalo.
 
-SIEMPRE menciona la web al final de la respuesta para que vean info más detallada con fotos: https://elsosiego.netlify.app
+RECOMENDACIONES DE MENÚ: Si alguien pide recomendación, recomienda siempre la TABLA CHULETÓN PREMIUM (30€/persona). Argumento: por solo 2€ más que El Sosiego incluye cortes premium como chuletón de ternera, secreto ibérico, chuleta de cordero y entrecot. Da igual cuántas personas sean.
 
-NUNCA digas "contáctanos por WhatsApp" — ya están aquí. Si no puedes resolver algo, di que en breve te atenderá una persona del equipo.
-
+SIEMPRE menciona la web al final: https://elsosiego.netlify.app
+NUNCA digas "contáctanos por WhatsApp" — ya están aquí.
 Firma siempre: El equipo de El Sosiego 🌿
 
 ══════════════════════════════════
@@ -119,28 +144,28 @@ PRECIOS POR NOCHE (toda la casa, no por persona):
 Reservas: Booking.com o directamente por WhatsApp/email
 
 ━━━ 2. EVENTOS Y CELEBRACIONES ━━━
-Patio con carpa para celebraciones privadas (comidas familiares, cumpleaños, reuniones).
+Patio con carpa para celebraciones privadas.
 Web: https://elsosiego.netlify.app/eventos.html
 Reservas SOLO por formulario: https://tally.so/r/wo8y61 (NUNCA por Booking)
 
-MENÚS DE EVENTOS (todos incluyen: 2 entrantes a elegir, tabla de carne o pescado, postre, café e infusiones, pan y agua):
+MENÚS (todos incluyen: 2 entrantes, tabla de carne o pescado, postre, café, pan y agua):
 
 · TABLA CLÁSICA — 25€/persona
   Carne: churrasco de ternera, pollo, secreto de cerdo, chuletas de cerdo, combinado embutidos
   Pescado: rodaballo a la brasa o salmón a la plancha
 
 · TABLA EL SOSIEGO — 28€/persona
-  Carne: churrasco de ternera, pollo, secreto de cerdo, lomo de cerdo, entraña, combinado embutidos
+  Carne: churrasco, pollo, secreto, lomo de cerdo, entraña, combinado embutidos
   Pescado: rodaballo a la brasa o salmón a la plancha
 
 · TABLA CHULETÓN PREMIUM — 30€/persona ⭐ RECOMENDADA
-  Carne: chuletón de ternera, careta de cerdo, entrecot, secreto ibérico, chuleta de cordero, entraña, embutidos
+  Carne: chuletón de ternera, careta, entrecot, secreto ibérico, chuleta de cordero, entraña, embutidos
   Pescado: rodaballo a la brasa o salmón a la plancha
-  → Por solo 2€ más que El Sosiego incluye cortes premium que marcan la diferencia.
+  → Por solo 2€ más que El Sosiego, incluye cortes premium que marcan la diferencia.
 
 Bebidas aparte según carta.
 
-CUANDO EL CLIENTE QUIERA RESERVAR UN EVENTO O PREGUNTE CÓMO HACERLO, manda siempre este mensaje exacto:
+CUANDO EL CLIENTE QUIERA RESERVAR UN EVENTO, manda siempre este mensaje exacto:
 
 "Para formalizar la reserva, rellena este formulario 👇
 https://tally.so/r/wo8y61
@@ -182,9 +207,9 @@ Albariños: Martín Godax 18€, Mar de Fredes 19€
 Bebidas: Refresco 2€ / Agua 1,5l 1,50€ / Cerveza 2€ / Champán: consultar
 
 ━━━ CONTACTO ━━━
-- WhatsApp: 694 268 895 / Email: elsosiegomrll@gmail.com
-- Instagram: @elsosiego.morella / Ubicación: Morella, Castellón
-- Web: https://elsosiego.netlify.app
+WhatsApp: 694 268 895 / Email: elsosiegomrll@gmail.com
+Instagram: @elsosiego.morella / Ubicación: Morella, Castellón
+Web: https://elsosiego.netlify.app
 `;
 
 // ── Funciones IA ──────────────────────────────────────────
@@ -193,11 +218,11 @@ async function clasificarMensaje(texto) {
     model: 'llama-3.3-70b-versatile',
     messages: [{ role: 'user', content: `Clasifica este mensaje de WhatsApp como SIMPLE o COMPLEJA.
 
-SIMPLE (responde el bot directamente): precios, menús, carta, vinos, qué es el negocio, ubicación, mascotas, capacidad, horarios, cómo reservar eventos, recomendaciones de menú, entrantes, bebidas, cafetería, información general de cualquier tipo que esté en el contexto.
+SIMPLE (responde el bot): precios, menús, carta, vinos, qué es el negocio, ubicación, mascotas, capacidad, cómo reservar eventos, recomendaciones de menú, entrantes, bebidas, cafetería, cualquier info general del contexto.
 
-COMPLEJA (necesita persona real): disponibilidad de fechas concretas para casa rural, negociación de precios, quejas o problemas, paellas a domicilio, peticiones muy especiales que no están en el contexto.
+COMPLEJA (necesita persona real): disponibilidad de fechas concretas para casa rural, negociación de precios, quejas, paellas a domicilio, peticiones muy especiales no cubiertas por el contexto.
 
-En caso de duda, clasifica como SIMPLE. El bot debe ser autónomo y resolver la mayoría de preguntas él solo.
+En caso de duda, clasifica como SIMPLE.
 
 Mensaje: "${texto}"
 Responde SOLO con una palabra: SIMPLE o COMPLEJA` }],
@@ -207,12 +232,14 @@ Responde SOLO con una palabra: SIMPLE o COMPLEJA` }],
   return res.includes('SIMPLE') ? 'SIMPLE' : 'COMPLEJA';
 }
 
-async function generarRespuesta(texto) {
+async function generarRespuesta(contacto, textoNuevo) {
+  const historial = obtenerHistorial(contacto);
   const r = await groq.chat.completions.create({
     model: 'llama-3.3-70b-versatile',
     messages: [
       { role: 'system', content: CONTEXTO_SOSIEGO },
-      { role: 'user', content: texto }
+      ...historial,
+      { role: 'user', content: textoNuevo }
     ],
     max_tokens: 300,
   });
@@ -224,30 +251,29 @@ async function procesarComando(msg) {
   const texto = msg.body?.trim().toLowerCase();
   if (!texto) return false;
 
-  const matchParar = texto.match(/^#parar\s+(\d+)/);
+  const matchParar = texto.match(/^#parar\s+(\S+)/);
   if (matchParar) {
-    const numero = matchParar[1];
-    atencionHumana.add(numero);
-    await msg.reply(`✅ Bot pausado para ${numero}. Escribe #reanudar ${numero} para reactivarlo.\n\n_Contactos pausados ahora: ${atencionHumana.size}_`);
-    console.log(`🤝 Atención humana activada para ${numero}. Lista: ${[...atencionHumana].join(', ')}`);
+    const id = matchParar[1];
+    atencionHumana.add(id);
+    await msg.reply(`✅ Bot pausado para ${id}.\nEscribe #reanudar ${id} para reactivarlo.\n\nPausados ahora: ${atencionHumana.size}`);
+    console.log(`🤝 Pausado: ${id}. Lista completa: ${[...atencionHumana].join(', ')}`);
     return true;
   }
 
-  const matchReanudar = texto.match(/^#reanudar\s+(\d+)/);
+  const matchReanudar = texto.match(/^#reanudar\s+(\S+)/);
   if (matchReanudar) {
-    const numero = matchReanudar[1];
-    atencionHumana.delete(numero);
-    await msg.reply(`✅ Bot reactivado para ${numero}.`);
-    console.log(`🤖 Bot reactivado para ${numero}. Lista: ${[...atencionHumana].join(', ')}`);
+    const id = matchReanudar[1];
+    atencionHumana.delete(id);
+    await msg.reply(`✅ Bot reactivado para ${id}.`);
+    console.log(`🤖 Reactivado: ${id}. Lista: ${[...atencionHumana].join(', ')}`);
     return true;
   }
 
   if (texto === '#lista') {
     if (atencionHumana.size === 0) {
-      await msg.reply('📋 No hay ningún contacto pausado ahora mismo.');
+      await msg.reply('📋 No hay ningún contacto pausado.');
     } else {
-      const numeros = [...atencionHumana].join('\n');
-      await msg.reply(`📋 Contactos con bot pausado:\n${numeros}`);
+      await msg.reply(`📋 Contactos pausados:\n${[...atencionHumana].join('\n')}`);
     }
     return true;
   }
@@ -271,7 +297,7 @@ client.on('qr', (qr) => {
 client.on('ready', () => {
   qrActual = null;
   console.log('✅ Bot de El Sosiego conectado y listo');
-  console.log('💡 Comandos: #parar NUMERO / #reanudar NUMERO / #lista');
+  console.log('💡 Comandos: #parar ID / #reanudar ID / #lista');
 });
 
 client.on('auth_failure', () => {
@@ -286,34 +312,38 @@ client.on('message', async (msg) => {
   const texto = msg.body?.trim();
   if (!texto) return;
 
-  // Comprobar si es un comando de control
+  // Comprobar si es un comando
   const esComando = await procesarComando(msg);
   if (esComando) return;
 
-  // Extraer número limpio y comprobar si está pausado
+  // Comprobar si está pausado — usando el from completo y el número limpio
   const numeroLimpio = extraerNumero(msg.from);
-  if (atencionHumana.has(numeroLimpio)) {
-    console.log(`⏭️ Ignorado (atención humana): ${msg.from} → ${numeroLimpio}`);
+  if (estaEnAtencion(msg.from)) {
+    console.log(`⏭️ Ignorado (atención humana): ${msg.from}`);
     return;
   }
 
-  console.log(`📨 Mensaje de ${msg.from} (${numeroLimpio}): "${texto}"`);
+  console.log(`📨 [${numeroLimpio}]: "${texto}"`);
 
   try {
     const tipo = await clasificarMensaje(texto);
     console.log(`   → ${tipo}`);
 
     if (tipo === 'SIMPLE') {
-      const respuesta = await generarRespuesta(texto);
+      // Guardar mensaje del cliente en historial
+      agregarAlHistorial(msg.from, 'user', texto);
+      const respuesta = await generarRespuesta(msg.from, texto);
+      // Guardar respuesta del bot en historial
+      agregarAlHistorial(msg.from, 'assistant', respuesta);
       await msg.reply(respuesta);
-      console.log('   ✅ Respuesta automática enviada');
+      console.log('   ✅ Enviado');
     } else {
       await msg.reply(`Hola 👋 En breve te atenderá alguien del equipo directamente.\n\n_El equipo de El Sosiego 🌿_`);
       if (TU_NUMERO) {
-        const sugerencia = await generarRespuesta(texto);
-        const aviso = `🤖 *MENSAJE COMPLEJO — El Sosiego Bot*\n\n📱 *De:* ${numeroLimpio}\n💬 *Mensaje:* ${texto}\n\n💡 *Sugerencia de respuesta:*\n${sugerencia}\n\n_Escribe #parar ${numeroLimpio} para tomar el control de esta conversación._`;
+        const sugerencia = await generarRespuesta(msg.from, texto);
+        const aviso = `🤖 *MENSAJE COMPLEJO*\n\n📱 *ID del contacto:* ${msg.from}\n💬 *Mensaje:* ${texto}\n\n💡 *Sugerencia:*\n${sugerencia}\n\n_Para tomar el control escribe:_\n#parar ${numeroLimpio}`;
         await client.sendMessage(TU_NUMERO, aviso);
-        console.log('   🔔 Aviso enviado');
+        console.log('   🔔 Aviso enviado a Diego');
       }
     }
   } catch (error) {
