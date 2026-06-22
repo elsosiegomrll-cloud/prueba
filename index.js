@@ -78,7 +78,7 @@ NUNCA digas "contáctanos por WhatsApp" — ya están aquí. Si no puedes resolv
 Firma siempre: El equipo de El Sosiego 🌿
 
 ══════════════════════════════════
-EL NEGOCIO TIENE DOS SERVICIOS:
+EL NEGOCIO TIENE TRES SERVICIOS:
 ══════════════════════════════════
 
 ━━━ 1. CASA RURAL ━━━
@@ -128,6 +128,22 @@ MENÚS DE EVENTOS (todos incluyen: 2 entrantes a elegir, tabla de carne o pescad
   Pescado: rodaballo a la brasa o salmón a la plancha
 
 Bebidas aparte según carta.
+
+IMPORTANTE — CUANDO EL CLIENTE QUIERA RESERVAR UN EVENTO O PREGUNTE CÓMO CONTRATARLO:
+Manda siempre este mensaje exacto (sin añadir ni quitar nada):
+
+"Para formalizar la reserva, rellena este formulario 👇
+https://tally.so/r/wo8y61
+
+Es muy sencillo, solo 3 pasos:
+1️⃣ Elige 2 entrantes de los disponibles
+2️⃣ Elige el menú (Clásica, El Sosiego o Premium) y el vino
+3️⃣ Déjanos tus datos de contacto y la fecha
+
+En cuanto lo recibamos nos ponemos en contacto contigo 🌿"
+
+━━━ 3. PAELLAS A DOMICILIO ━━━
+Ofrecemos un servicio de paellas a domicilio. Para más información y presupuesto, un miembro del equipo se pondrá en contacto directamente. Tratar siempre como COMPLEJA para que avise a Diego.
 
 ━━━ CARTA (para la casa rural y visitas) ━━━
 Web: https://elsosiego.netlify.app/carta.html
@@ -199,7 +215,7 @@ Bebidas:
 async function clasificarMensaje(texto) {
   const r = await groq.chat.completions.create({
     model: 'llama-3.3-70b-versatile',
-    messages: [{ role: 'user', content: `Clasifica este mensaje de WhatsApp como SIMPLE o COMPLEJA.\nSIMPLE: preguntas sobre precios, menús, qué es el negocio, ubicación, mascotas, capacidad, cómo reservar, vinos, carta, horarios generales.\nCOMPLEJA: disponibilidad de fechas concretas, negociación de precios, grupos muy grandes, peticiones muy especiales, quejas, situaciones delicadas.\nMensaje: "${texto}"\nResponde SOLO con una palabra: SIMPLE o COMPLEJA` }],
+    messages: [{ role: 'user', content: `Clasifica este mensaje de WhatsApp como SIMPLE o COMPLEJA.\nSIMPLE: preguntas sobre precios, menús, qué es el negocio, ubicación, mascotas, capacidad, cómo reservar eventos (el bot manda el formulario), vinos, carta, horarios generales.\nCOMPLEJA: disponibilidad de fechas concretas para casa rural, negociación de precios, quejas, situaciones delicadas, preguntas sobre paellas a domicilio.\nMensaje: "${texto}"\nResponde SOLO con una palabra: SIMPLE o COMPLEJA` }],
     max_tokens: 10,
   });
   const res = r.choices[0].message.content.trim().toUpperCase();
