@@ -1,12 +1,9 @@
 const { Client, LocalAuth } = require('whatsapp-web.js');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const Groq = require('groq-sdk');
 const http = require('http');
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const TU_NUMERO     = process.env.TU_NUMERO;
-
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+const TU_NUMERO = process.env.TU_NUMERO;
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 let qrActual = null;
 
@@ -110,21 +107,27 @@ REGLAS:
 4. Firma siempre como "El equipo de El Sosiego 🌿"
 `;
 
+// ── Funciones IA con Groq ─────────────────────────────────
 async function clasificarMensaje(texto) {
-  const prompt = `Clasifica este mensaje de WhatsApp como SIMPLE o COMPLEJA.
-SIMPLE: preguntas generales sobre qué es el negocio, precios, menús, ubicación, mascotas, capacidad, cómo reservar.
-COMPLEJA: disponibilidad de fechas concretas, negociación de precios, grupos muy grandes, peticiones especiales, quejas.
-Mensaje: "${texto}"
-Responde SOLO con una palabra: SIMPLE o COMPLEJA`;
-  const result = await model.generateContent(prompt);
-  const r = result.response.text().trim().toUpperCase();
-  return r.includes('SIMPLE') ? 'SIMPLE' : 'COMPLEJA';
+  const r = await groq.chat.completions.create({
+    model: 'llama3-8b-8192',
+    messages: [{ role: 'user', content: `Clasifica este mensaje de WhatsApp como SIMPLE o COMPLEJA.\nSIMPLE: preguntas generales sobre qué es el negocio, precios, menús, ubicación, mascotas, capacidad, cómo reservar.\nCOMPLEJA: disponibilidad de fechas concretas, negociación de precios, grupos muy grandes, peticiones especiales, quejas.\nMensaje: "${texto}"\nResponde SOLO con una palabra: SIMPLE o COMPLEJA` }],
+    max_tokens: 10,
+  });
+  const res = r.choices[0].message.content.trim().toUpperCase();
+  return res.includes('SIMPLE') ? 'SIMPLE' : 'COMPLEJA';
 }
 
 async function generarRespuesta(texto) {
-  const prompt = `${CONTEXTO_SOSIEGO}\nMensaje del cliente: "${texto}"\nGenera una respuesta natural, cálida y útil.`;
-  const result = await model.generateContent(prompt);
-  return result.response.text().trim();
+  const r = await groq.chat.completions.create({
+    model: 'llama3-8b-8192',
+    messages: [
+      { role: 'system', content: CONTEXTO_SOSIEGO },
+      { role: 'user', content: texto }
+    ],
+    max_tokens: 400,
+  });
+  return r.choices[0].message.content.trim();
 }
 
 // ── Cliente WhatsApp ──────────────────────────────────────
@@ -137,7 +140,7 @@ const client = new Client({
 
 client.on('qr', (qr) => {
   qrActual = qr;
-  console.log('📱 QR generado — abre la URL pública de Railway en el navegador para escanearlo');
+  console.log('📱 QR generado — abre la URL pública de Railway para escanearlo');
 });
 
 client.on('ready', () => {
