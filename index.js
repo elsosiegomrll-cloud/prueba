@@ -7,6 +7,9 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 let qrActual = null;
 
+// ── Lista de contactos en atención humana ─────────────────
+const atencionHumana = new Set();
+
 // ── Servidor web para mostrar el QR ──────────────────────
 const servidor = http.createServer((req, res) => {
   res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
@@ -160,14 +163,13 @@ ENTRANTES:
 - Tostas con Sobrasada Trufada: 7,50€
 
 CARNE A LA BRASA (acompañada de verduras de temporada):
-Vacuno:
 - Chuletón de Ternera Madurada 500g: 25€
 - Chuletón de Ternera 1kg: 23€
 - Entrecot de Ternera 500g: 17€
 
 CARTA ESPECIAL:
-- Tabla de carne y verdura (aprox. 6 personas): 150€ — Churrasco, Secreto, Lomo, Pollo, Conejo, Entraña, Chorizo, Morcilla, Longaniza
-- Tabla completa de carne y verdura (aprox. 10 personas, tabla 2,5m): 250€
+- Tabla de carne y verdura (aprox. 6 personas): 150€
+- Tabla completa (aprox. 10 personas, tabla 2,5m): 250€
 - Paella de carne El Sosiego (mínimo 6 personas): 60€
 - Rodaballo a la brasa (aprox. 3 personas, 1.800g): 50€
 
@@ -177,31 +179,12 @@ CAFETERÍA:
 - Churros: 2,00€ / Flaons (típico de Morella): 2,00€
 - Bizcocho Casero: 1,80€ / Tostado con Jamón: 3,50€
 
-BODEGA (vinos y bebidas):
-Vino de la Casa:
-- Valdes Tinto: 10€ / Valdes Blanco: 10€
-
-Tintos:
-- Cune crianza (Rioja): 16€
-- Ramón Bilbao crianza (Rioja): 16€
-- Lann crianza (Rioja): 16€
-- Azpilicueta crianza (Rioja): 20€
-- Muga crianza (Rioja): 25€
-- Protos (Ribera del Duero): 18€
-- Pago de Capellanes (Ribera del Duero): 25€
-- Valmayor Garnacha (Terra Alta): 12€
-
-Blancos:
-- Ramón Bilbao: 14€
-- Cantarranas: 12€
-- Valmayor Garnacha (Terra Alta): 12€
-
-Albariños:
-- Martín Godax: 18€
-- Mar de Fredes: 19€
-
-Bebidas:
-- Refresco: 2€ / Agua 1,5l: 1,50€ / Cerveza: 2€ / Champán: consultar
+BODEGA:
+Vino de la Casa: Valdes Tinto 10€ / Valdes Blanco 10€
+Tintos: Cune crianza 16€, Ramón Bilbao crianza 16€, Lann crianza 16€, Azpilicueta crianza 20€, Muga crianza 25€, Protos 18€, Pago de Capellanes 25€, Valmayor Garnacha 12€
+Blancos: Ramón Bilbao 14€, Cantarranas 12€, Valmayor Garnacha 12€
+Albariños: Martín Godax 18€, Mar de Fredes 19€
+Bebidas: Refresco 2€ / Agua 1,5l 1,50€ / Cerveza 2€ / Champán: consultar
 
 ━━━ CONTACTO ━━━
 - WhatsApp: 694 268 895
@@ -259,10 +242,32 @@ client.on('auth_failure', () => {
 client.on('message', async (msg) => {
   if (msg.from.includes('@g.us')) return;
   if (msg.from === 'status@broadcast') return;
-  if (msg.fromMe) return;
 
   const texto = msg.body?.trim();
   if (!texto) return;
+
+  // ── Mensajes enviados POR TI (Diego) desde el 694 268 895 ──
+  if (msg.fromMe) {
+    const numero = msg.to;
+
+    // #fin — devuelve el control al bot
+    if (texto.toLowerCase() === '#fin') {
+      atencionHumana.delete(numero);
+      console.log(`✅ Bot reactivado para ${numero}`);
+    }
+    // Cualquier otro mensaje tuyo que empiece por # — tomas el control
+    else if (texto.startsWith('#')) {
+      atencionHumana.add(numero);
+      console.log(`🤝 Atención humana activada para ${numero}`);
+    }
+    return;
+  }
+
+  // ── Si ese contacto está en atención humana, ignorar ──
+  if (atencionHumana.has(msg.from)) {
+    console.log(`⏭️ Ignorado (atención humana): ${msg.from}`);
+    return;
+  }
 
   console.log(`📨 Mensaje de ${msg.from}: "${texto}"`);
 
