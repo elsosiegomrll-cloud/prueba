@@ -178,7 +178,7 @@ Es muy sencillo, solo 3 pasos:
 En cuanto lo recibamos nos ponemos en contacto contigo 🌿"
 
 ━━━ 3. PAELLAS A DOMICILIO ━━━
-Servicio de paellas a domicilio disponible. Para info y presupuesto, un miembro del equipo se pondrá en contacto. → Tratar siempre como COMPLEJA.
+Ofrecemos servicio de paellas a domicilio. Cuando alguien pregunte por este servicio, responde con interés y calidez, diles que es un servicio que ofrecemos y que en breve alguien del equipo se pondrá en contacto para confirmar disponibilidad y presupuesto. NO escales a persona real — responde tú directamente con este mensaje y punto.
 
 ━━━ CARTA ━━━
 Web: https://elsosiego.netlify.app/carta.html
@@ -218,9 +218,9 @@ async function clasificarMensaje(texto) {
     model: 'llama-3.3-70b-versatile',
     messages: [{ role: 'user', content: `Clasifica este mensaje de WhatsApp como SIMPLE o COMPLEJA.
 
-SIMPLE (responde el bot): precios, menús, carta, vinos, qué es el negocio, ubicación, mascotas, capacidad, cómo reservar eventos, recomendaciones de menú, entrantes, bebidas, cafetería, cualquier info general del contexto.
+SIMPLE (responde el bot): precios, menús, carta, vinos, qué es el negocio, ubicación, mascotas, capacidad, cómo reservar eventos, recomendaciones de menú, entrantes, bebidas, cafetería, paellas a domicilio, cualquier info general del contexto.
 
-COMPLEJA (necesita persona real): disponibilidad de fechas concretas para casa rural, negociación de precios, quejas, paellas a domicilio, peticiones muy especiales no cubiertas por el contexto.
+COMPLEJA (necesita persona real): disponibilidad de fechas concretas para casa rural, negociación de precios, quejas, peticiones muy especiales no cubiertas por el contexto.
 
 En caso de duda, clasifica como SIMPLE.
 
